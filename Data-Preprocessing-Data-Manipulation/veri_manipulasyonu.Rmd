@@ -1,0 +1,437 @@
+---
+title: "Veri Manipulasyounu"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+Veri manipulasyonu, veriyi amaca yonelik okunabilir ve düzenli hale getirmektir.Yapilari parca parca,anlasilabilir,okunabilir ve basit bir sekilde ifade etme yaklasiminda olmaliyiz.
+
+# Tidy Tools Manifestosu 4 Prensibi
+
+. Mumkun oldugu kadar var olan veri yapilarini kullan.
+
+. Pipe ile basit fonksiyonlar olustur:Buyuk problemleri kucuk parcalara ayirarak coz.
+
+. Fonksiyonel programlamayı benimse.
+
+. Insanlar icin tasarla: Temiz ve okunabilir kod yaz. 
+
+# Pipe Operatoru ( %>%)
+
+. Karmasik islemleri birbirine baglamak.
+
+. Kendisinden onceki yapinin ciktisini, kendisinden bir sonraki yapiya girdi olarak atanmasini saglamaktadir.
+
+
+# dplyr Nedir ?
+
+Bir pense veya ingiliz anahtari esprisinden yola cikarak dusunebiliriz.Veri manipulasyonun grameri olarak adlandirilmistir.Veri manipulasyonu, veri gorsellestirme ve kesifci veri analizi gibi konularda kullanilmaktadir.
+
+# Tidy Data 
+
+Tidy Data, her bir satir elemaninin gozlem birimini, her bir sutun elemaninin da degiskeni temsil ettigi veri tipidir.
+
+Satir --> Gozlem
+
+Sutun --> Degisken
+
+# tidyr
+
+. gather()
+
+. spread()
+
+. seperate()
+
+. unite()
+
+---------------------------------------------------------------------------
+
+select() : degisken secimi
+
+filter() : gozlem secimi
+
+mutate() : degisken olusturma
+
+summarise() : ozet istatistikler
+
+group_by() : gruplama
+
+left_join() : birlestirme islemleri
+
+summarise() : veri ozetleme
+
+----------------------------------------------------------------------------
+
+# Veri Seti
+
+nycflights13 - New York City'e ait 2013 yilinin ucus verileri
+
+```{r}
+
+# Kutuphane icerisinden veri seti secme ve dataframe olarak atama
+
+library(dplyr)
+library(nycflights13)
+
+df <- flights
+
+df
+str(df)
+summary(df)
+
+```
+
+```{r}
+
+# Hepsinin icinde oldugu ornek bir calisma
+
+df %>% 
+  select(dep_delay, day, carrier) %>%
+  filter(dep_delay > 10) %>%
+  group_by(carrier) %>%
+  summarise(ucus_sayisi = n(),
+            ortalama = mean(dep_delay))
+
+```
+
+# 1.Degisken Secim İslemleri 
+
+## select()
+
+```{r}
+
+# Veri seti icerisinden degisken secme : select fonks.ilk arguman olarak veri setini daha sonra ise secilecek olan degisken isimleri girilir.
+
+select(df, carrier, flight, tailnum)
+
+# Aralik belirterekte degisken secebiliriz.
+select(df, carrier, origin:hour)
+
+# Sayiya indeksleyerek degisken secme
+select(df, 1:4)
+
+# Gorunmesini istemedigimiz degiskenin basina - koyarak secim yapabiliriz.
+select(df, -carrier)
+
+# Birden fazla degiskeni disarida bırakmak istersek eger
+select(df, -c(tailnum, carrier))
+
+# Aralik belirtererkte birden fazla degiskeni disarida birakabiliriz.
+select(df, -c(origin:hour))
+
+```
+
+Veri seti icerisindeki degiskenlerden sadece bizim istedigimiz isim ya da ifadeyi barindiran degiskenleri secmek istedigimizde onları veri setinde aratarak erisebiliriz.
+
+
+## contains()
+
+```{r}
+
+select(df, contains("time"))  # icerisinde time gecen degiskenler
+
+```
+
+## starts_with()
+
+```{r}
+
+select(df, starts_with("dep")) 
+
+```
+
+## ends_with()
+
+```{r}
+
+select(df, ends_with("delay"))
+
+```
+
+## num_range()
+
+```{r}
+
+m <- matrix(1:25, 5, 5)
+colnames(m) <- paste("x",1:5, sep ="")
+
+select(as.data.frame(m), num_range("x",1:3))
+
+# dplyr fonksiyonlarinin birinci argumanlari dataframe'den olusman zorunda oldugundan dolayı m matrisine cevirme islemi uyguladik.
+
+```
+
+```{r}
+
+# Hem degisken isimleri ile hemde bir fonksiyon ile degisken secimi yapabiliriz.
+
+select(df, carrier, tailnum, contains("time"))
+
+```
+
+# 2. Gozlem Islemleri
+
+## filter()
+
+```{r}
+
+filter(df, year == 2013 & month  == 2 & day == 26)
+
+filter(df, dep_delay > 1000)
+
+filter(df, dep_delay > mean(df$dep_delay, na.rm = TRUE) + sd(df$dep_delay, na.rm = TRUE)) # gecikme zamani ortalamasi ile standart sapma degerinin toplamindan buyuk olan gecikme zamani gozlem degerleri
+
+```
+
+## arrange()
+
+```{r}
+
+# arrange() fonksiyonu gozlemleri belirtildigi sirada kucukten buyuge ya da buyukten kucuge siralamaya yaramaktadir.
+
+a <- select(df, dep_delay, month, day)  # degisken secme ve atama yapma
+
+arrange(a, dep_delay, month, day)  # kucukten buyuge
+
+b <- arrange(a, desc(dep_delay), month, day) # buyukten kucuge
+
+c <- filter(b, dep_delay > 0)
+
+```
+
+```{r}
+
+# Yukarida tek tek atama ile gerceklestirdigimiz islemleri pipe/chain operatoru (%>%) ile gerceklestirebiliriz.
+
+df %>%
+  filter(month == 2, day ==18) %>%
+  select(dep_delay, month) %>%
+  arrange(desc(dep_delay),month)
+ 
+```
+
+## sample_frac()
+
+```{r}
+
+# Belirli bir oranda rastgele degisken secimi yapmaktadir.Yerine koyma veya koymama durumu belirtilebilir.
+
+df %>% sample_frac(0.05)
+
+```
+
+## sample_n()
+
+```{r}
+
+# Yine rastgele secim yapmaktadir fakat belirtilen bir deger vardir.
+
+df %>% sample_n(100)
+
+```
+
+## slice()
+
+```{r}
+
+# Pozisyona gore secim imkani saglamaktadir.
+
+df %>% slice(199:299)
+
+```
+
+## top_n()
+
+```{r}
+
+# İlk n degiskeni secmek icin kullanilmaktadir.
+
+df %>% top_n(5)
+
+```
+
+
+# 3. Degisken Donusum Islemleri
+
+## mutate()
+
+```{r}
+
+# Mutate() fonksyionu yeni bir degisken olusturmaya yaramaktadir.Mutate() fonksiyonun ilk argumani veri seti, daha sonra olusturulacak olan yeni degiskenin adinin ne oldugu ve nasıl olacagı ifade edilmelidir.
+
+sample <- df %>%
+  sample_n(1000) %>%
+  select(arr_delay, dep_delay, distance, arr_time)
+
+# Ornek olarak bir senaryo dusunelim.Kalkıs olarak eksi konumda bulunan yani gec kalkmıs olan bir pilotun varıs zamani arti konumda ise bu kazanci hesap eden (varis zamani - kalkis zamani) bir degiskeni yok.Bunu olusturdugumuz dusenelim.Diger bir yandan ucaklarin hizini da hesaplamak istedigimiz dusunelim.(uzaklık / varis_zamani * 60)
+
+mutate(sample,
+       kazanc = arr_delay - dep_delay,
+       hiz = distance / arr_time * 60)
+
+```
+
+## rename()
+
+```{r}
+
+# mutate() fonksiyonunu kullanmadan yeni bir degisken olusturarak isim vermeden de isimlendirme yapabiliriz.
+
+rename(df, 
+       varis_gecikmesi = arr_delay,
+       kalkis_gecikmesi = dep_delay)
+```
+
+## transmute()
+
+```{r}
+
+# Yeni bir degisken olustururken eski degiskenleri gormek istemiyorsak bu durumda transmute fonksiyonu kallanilir.
+
+transmute(sample,
+       kazanc = arr_delay - dep_delay,
+       hiz = distance / arr_time * 60)
+
+```
+
+
+# 4. Gruplama: group_by()
+
+```{r}
+
+# Verimiz icerisindeki kategorik degiskenlere gore veriyi gruplamak icin kullanilmaktadir.Ornegin; cinsiyet,il vb.
+
+df %>% group_by(carrier) %>%
+  summarise(ucus_sayi = n(),
+            ortalama_gecikme = mean(dep_delay, na.rm = TRUE),
+            medyan = median(dep_delay, na.rm = TRUE),
+            standart_sapma = sd(dep_delay, na.rm = TRUE),
+            varyans = var(dep_delay, na.rm = TRUE),
+            ortalama_uzaklik = mean(distance, na.rm = TRUE))
+
+```
+
+
+# 5. Veri Ozetleme
+
+Veri ozetleme fonksiyonları genellikle gruplama fonksiyonları ile beraber kullanilmaktadir. Betimsel istatisler icin asagidaki fonksiyonlar ihtiyac durumuna gore kullanilmaktadir.
+
+. summarise()
+
+. mean(), median(), sum(), sd(), var()
+
+. first(), last(), nth()
+  
+. quantile(), min(), max()
+
+
+# 6. Join Islemleri
+
+. left_join()
+
+. righ_join()
+
+. inner_join()
+
+. full_join()
+
+
+# 7. Tidy Data (Duzenli Veri)
+
+
+```{r}
+
+library(tidyverse)
+
+table1  # duzenli veri
+
+table2  # duzensiz veri
+
+table3  # duzensiz veri - rate degiskeni olusturulmus(cases / population)
+
+table4a # duzensiz veri - yıl degerleri degisken ismi haline donusmus
+
+table4b # duzensiz veri 
+
+```
+
+## gathering ve spreading
+
+### gathering
+
+```{r}
+
+# Getirmesini istedigimiz yani toplamak istediğimiz degiskenleri ifade ediyoruz. key degeri ile bu degiskenlere isim atamasi yapiyoruz ve daha sonra gozlem degerleri hangi degiskene ait ise onu belirtiyoruz.
+
+table4a %>% gather(`1999`,`2000`, key = "year", value = "cases")
+
+```
+
+```{r}
+
+# yillarin altına dusen degerler population degerlerini gostermektedir.Bır onceki ornek tabloda oldugu gibi yillar degisken haline gelmis. Simdi bu durumu duzenli hale getirecegiz.
+
+table4b %>% gather(`1999`,`2000`, key = "year", value = "population")
+
+```
+
+```{r}
+
+# Join islemlerine ornek olmasi icin iki tabloyu birlestirecegiz.
+
+tidy_a <- table4a %>% gather(`1999`,`2000`, key = "year", value = "cases")
+
+tidy_b <- table4b %>% gather(`1999`,`2000`, key = "year", value = "population")
+
+left_join(tidy_a, tidy_b)
+
+
+```
+
+### spreading
+
+```{r}
+
+# gather() fonksiyonun tersidir.Oncekinde degisken isimlerinde degiskenlerin degerleri vardır.Burada ise satirlarda degiskenkenlerin kendileri var ve yanlarindan bu degiskenlerin degerleri var.
+
+# Gitmesini istedigimiz degisken ismini key degerine, degerlerin oldugu degisken ismini ise value kismina giriyoruz.
+
+table2
+
+spread(table2, key = "type", value = "count" )
+
+```
+
+
+## seperating ve uniting
+
+### separating
+
+```{r}
+
+# Bir degiskenin degerini iki degiskenin degeri olarak donusturulme durumundan sonra bunlari ayirmak icin kullanilir.
+
+table3 %>%
+  separate(rate, into = c("cases","population"), sep = "/", convert = TRUE)
+
+# Yukarida ki kod kisminda table3 degerinde birlesik iki degere sahip olan rate degiskenini into kisminda ise ayirmak istedigimiz iki degiskenin isimlerini ve nasil ayirmak istedigimizi  belirttik. convert argumani ile de kendisi bu degiskenleri olasi en iyi degiskene cevirmektedir.
+
+```
+
+### unite
+
+```{r}
+# Var olan iki degiskenin degerlerini bir araya getirerek anlamli bir birlesme yapilmak isteniyorsa kullanilmaktadir.
+
+table5 %>%
+  unite(yil, century, year, sep = "")
+
+
+# Yukarida ki kod kisminda unite fonksiyonu icerisine ilk once yeni degisken ismini, daha sonra birlestirilcek kolonları ve birlestirme seklini belirtiyoruz.
+
+```
+

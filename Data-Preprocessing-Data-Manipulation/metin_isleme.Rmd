@@ -1,0 +1,239 @@
+---
+title: "R'da Metin Isleme"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+# R'da Karakterler ile Calismak
+
+# 1. Karakter Olusturma
+
+## Bos Karakter
+
+```{r}
+
+# bos karakter
+bos_string <- " "
+class(bos_string)
+
+# bos karakter vektor
+ornek <- character(0)
+class(ornek)
+
+str(ornek)
+
+ornek[1] <- "bu birinci degerdir"
+ornek
+
+ornek[2] <- "bu ikinci degerdir"
+ornek
+
+is.character(ornek)
+
+```
+
+## paste() ve digerleri
+
+```{r}
+
+# paste() fonksiyonu tek ya da birden fazla metin ifadesinin yazdirilmasi islemini gormektedir.
+
+metin <- "bu bir karakterdir"
+karakter <- "bu da baska bir karakterdir"
+
+paste(metin, karakter)
+
+
+# sep argumanı birlestirme islemi yapılırken ayracin ne olacagini gostermektedir.
+paste(metin, karakter, sep = "--")
+
+
+# DIGERLERI
+
+print("karakter", quote = FALSE)  # quoate=FALSE cıktidaki tirnak isaretini kaldırırmaya yardımcı olur.
+
+noquote("karakter")  # ciktida sonucu tirnak isareti olmadan verir.
+
+cat("selam")
+
+toString(99) # kendi icerisine girilen farkli formatlardaki hatta numerik tiptedi verileri karaktere donusturmek icin kullanilmaktadir.
+
+```
+
+# 2. Temel Karakter Islemleri
+
+```{r}
+
+# nchar() icerisinde var olan karakterlerin uzunlugunu ifade eder.
+nchar("Sevdanur GENC")
+nchar(c("Sevdanur","GENC","besiktas"))
+
+# length() fonksiyonu icerisinde kac tane bilesen oldugunun sayisini gosterir.
+length(c("Sevdanur","GENC","besiktas"))
+
+# tolower() icerisine girilmis olan bir metnin tum degerlerini kucuk harfe cevirir.
+tolower("SevDaNuR GEnC")
+
+# toupper() icerisine girilmis olan bir metnin tum degerlerini buyuk harfe cevirir.
+toupper("sevdanur genc")
+toupper(c("sevdanur","genc","besiktas"))
+
+# Metin icerisindeki ifadeden bir karakteri başka bir karaktere donusturmek icin kullanilir.
+
+chartr("l","L","laleliden bir gul aldim") # ilk ifade degistirilmek istenen, ikinci hangisine degistirilecegini belirtmektedir.
+
+# abbreviate() fonksiyonu kisaltma islemleri yapmak icin kullanilir.
+renkler <- colors()[1:6]  # colors() fonks.tum renklerin isimlerini vermektedir.
+abbreviate(renkler, minlength = 7)  # minlength ile en az kisaltacagi karakter sayisi
+
+# substr() fonksiyonu metin icerisinden baslangıc ve bitis degerleri girilerek karakter almaya yaramaktadir.
+substr("sevdanur",2,5)
+
+# substr() ile her bir kelimenin ikinci elemanina atama yapmak
+x <- c("bir","iki","uc")
+substr(x,2,2) <- "#"
+x
+
+# grep() fonksiyonu bir vektor ya da metin icerisinde ozel olarak bizim belirtigimiz arama kelimesinin icinde gectigi indeksleri bulmaya yaramaktadir.
+
+v <- c("bir","berber","bir","berbere","gelme","burasi","bana ancak yeter")
+
+grep("bir",v)
+grep("er", v)
+
+# sub() fonksiyonu vermis oldugumuz bir vektor icerisinde yakaladigimiz yapiyi herhangi birseyle degistirmek istedigimizde kullandigimiz fonksiyondur.
+
+v <- c("bir","berber","bir","berbere","gelme","burasi","bana ancak yeter")
+sub("bir","iki", v)  # bir kelimesini iki ile degistirme
+
+
+```
+
+# 3.Vektorel Islemler
+
+```{r}
+
+# Elimizde var olan birden fazla vektorler ile ilgili islemler yapilmak istenildiginde yapilabilecek islemlerdir.
+
+sirket_a <- c("R","SQL","Python","SPSS","SAS")
+sirket_b <- c("SQL","R","Python","SPSS","Excel")
+sirket_c <- c("R","SQL","Python","SAS","SPSS")
+
+# birlestirme ( union() )
+
+union(sirket_a,sirket_b)  # sirket_a bilesenleri uzerine sirket_b'nin farklı olan elemanlarini da ekleyerek birlestirme yapmaktadir.
+
+
+# kesisim ( intersect() )
+
+intersect(sirket_a,sirket_b) # iki kumenin birbirleri ile kesisimi yani ortak olan elemanlarini gostermektedir.
+
+
+# setdiff()
+
+setdiff(sirket_a,sirket_b) # iki kumenin arasinda kesismeyen/ortak olmayan elemani gostermektedir
+
+
+# Netice itibari ile yukaridaki fonksiyonlarda verilis sirasina gore sonuc dondurmektedir. setdiff() fonksiyonu da farkliligi ifade etmektedir ve hangi kume once verilirse onun digerinden farkı olanı gostermektedir.
+
+
+# setequal()
+
+setequal(sirket_a,sirket_b) # gozlemlerin sirasindan bagimsiz olarak icerdigi elemanlarin birbirine denk olup olmadigini ifade etmektedir.
+setequal(sirket_a,sirket_c)
+
+
+# identical() -- Mutlak esitligi ifade etmektedir.
+
+identical(sirket_a,sirket_b)
+identical(sirket_a,sirket_c)
+
+```
+
+
+# 4. stringr ile Karakter Islemleri
+
+## str_detect():eslesme saptama islemleri
+
+```{r}
+
+v <- c("bir","berber","bir","berbere","gelme","burasi","bana ancak yeter")
+
+library(stringr)
+str_detect(v, "bir")
+
+# fonksiyon icerisine verilen bir ifadenin liste icerisinde eslesme durumunu TRUE-FALSE olarak belirtmektedir.
+
+str_which(v, "bir")  # fonksiyon icerisine verilen bir ifadenin liste icerisinde eslesme durumunda kacinci indekste oldugunu gostermektedir.
+
+str_count(v, "bir")  # fonksiyon icerisine verilen bir ifadenin liste icerisinde eslesme durumunda ilgili olan durumun var olup olmadigini (sayisini) gostermektedir.
+
+str_locate(v, "bir") # girilmis olan degerin vektor icerisindeki konumunu ifade etmektedir.
+
+str_locate_all(v, "bir")
+
+```
+
+
+## str_sub() : karakter alt kume
+
+```{r}
+
+veri <- c("buyukveri","makineogrenmesiveveri","istatistikveveri","yazilimveveri")
+
+str_sub(veri, -4,-1)  # karakter icinde yerini bildigimiz bir kisim ifadeyi almak icin kullaniriz.
+
+```
+
+## str_length() : karakter uzunluk
+
+```{r}
+
+veri <- c("buyukveri","makineogrenmesiveveri","istatistikveveri","yazilimveveri")
+
+str_length(veri)
+
+```
+
+## str_replace() : eslesme degistirme
+
+```{r}
+
+v <- c("bir","berber","bir","berbere","gelme","burasi","bana ancak yeter")
+
+#  bir vektor icerisinde yapinin siralamasini bilmeden onu yakalamak istedigimizde ve onu baska bir deger ile degistirmek istedigimizde kullanilir.
+
+str_replace(v, "bir","--")
+
+# degistirme islemi yapmak istedigimiz vektorun elemanlari icerisinde aradigimiz ilgili yapi birden fazla defa tekrar etmesi durumunda str_replace_all() fonksiyonu kullanilir.
+
+
+v <- c("bir bir bir","berber","bir","berbere","gelme","burasi","bana ancak yeter")
+str_replace_all(v, "bir", "--")
+
+```
+
+## str_c() : birlestirme
+
+```{r}
+
+str_c("oleyy","oleyy","sampiyon","besiktas", sep = " ") 
+
+# birlestirme isleminde sep argumani kullanilmadinda tum karakterler bitisik olarak birlestirme islemi gerceklesecektir.
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
