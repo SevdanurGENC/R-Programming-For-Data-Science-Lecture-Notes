@@ -1,0 +1,497 @@
+---
+title: 'Pfizer ve BioNTech Aşı Tweetleri Metin Analizi '
+author: "Sevdanur GENC"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+**Pfizer** ve **BioNTech** tarafından işbirliği içinde yapılan aşı hakkında güncel tweetler metin madenciliği yöntemleriyle analiz edilerek ve uygun görselleştirmeler yapılarak anlatılmaktadır.
+
+##Gerekli Kütüphaneler
+
+
+```{r message=FALSE, warning=FALSE}
+library(tm)           #metin madenciligi
+library(wordcloud)    #kelime bulutu oluşturmak
+library(wordcloud2)   #farklı tarzda bir kelime bulutu oluşturmak
+library(RColorBrewer) #renk paleti
+library(tidytext)     #metin bloklarını parçalayıp sıklıkla kullanılan ifadelere ulaşmak
+library(tidyverse)    #dplyr, ggplot2, tidyr
+library(ggplot2)      #görselleştirme
+library(data.table)
+library(rJava)
+library(qdap)    #en fazla kullanılan kelimeler
+library(RWeka)   #kelime grupları yaratmak
+library(ggthemes) #korelasyon grafiği oluşturma
+#Duygu analizi
+library(syuzhet)
+library(lubridate)
+library(scales)
+library(reshape2)
+library(textdata)
+library(janeaustenr)
+library(stringr)
+library(plyr)
+library(RSentiment)
+
+```
+
+
+## Veri Seti Hakkında Bilgi ve Veri Setinin Yüklenmesi
+
+
+```{r message=FALSE, warning=FALSE}
+vaccination <- read_csv("C:/Users/Nano/Desktop/MLAlgo/Sample-02/vaccination_tweets_new.csv")
+```
+
+```{r message=FALSE, warning=FALSE}
+View(vaccination)
+max(vaccination$date)  
+min(vaccination$date)
+```
+
+Veri seti, 2019 yılında tüm dünyada ortaya çıkan koronavirüs(covid-19) ile mücadelede **Pfizer** ve **BioNTech** tarafından işbirliği içinde yapılan *12/12/2020 - 01/13/2021* arası aşı hakkındaki tweetleri içermektedir.
+
+Veri seti kaynağı:https://www.kaggle.com/gpreda/pfizer-vaccine-tweets
+
+
+##Veri Setinin Özellikleri
+
+
+```{r message=FALSE, warning=FALSE}
+summary(vaccination)  #veriseti özeti
+```
+
+```{r message=FALSE, warning=FALSE}
+head(vaccination)  #ilk 6 satır
+```
+
+Veri seti 16 değişkenden oluşmaktadır. 3302 adet metin parçası bulunmaktadır.
+
+
+```{r message=FALSE, warning=FALSE}
+glimpse(vaccination)
+```
+
+Görüldüğü gibi vaccination veri tabanında istenilen metin dışında diğer değişkenler de bulunuyor. Öncelikli olarak, “text” sütunu altında toplanmış metin kısmını bu veri tabanından bir vektör halinde ayrıştırılır.
+
+```{r message=FALSE, warning=FALSE}
+asi.tweet <- vaccination$text
+```
+
+
+## Corpus (Yapı) Oluşturma
+
+Bu  metnin analizinde **Corpus** adı verilen yapıyı oluşturmak için **tm()** paketinin **VectorSource()** ve **VCorpus()** fonksiyonları kullanılır.
+
+```{r message=FALSE, warning=FALSE}
+asi.kaynak <- VectorSource(asi.tweet)
+asi.corpus <- VCorpus(asi.kaynak)
+```
+
+**VCorpus** nesnesi bir iç içe geçmiş listeler olarak düşünülebilir. Corpustaki 20. tweete bakılırsa;
+
+```{r message=FALSE, warning=FALSE}
+#ası.corpus'u çağıralım
+asi.corpus
+```
+
+```{r message=FALSE, warning=FALSE}
+#ası.corpus içindeki 20. tweet
+asi.corpus[[20]]
+```
+
+```{r message=FALSE, warning=FALSE}
+#ası.corpus içindeki 20. tweetin metni
+asi.corpus[[20]][1]
+```
+
+
+## Veri Temizleme
+
+Corpus yaratılmasına rağmen, bu corpusu kullanabilmemiz için üzerinde bir dizi metin temizliği uygulaması yapılması gerekir.
+URL ve ingilizce olmayan ifadeleri temizlemek için **asi.urlsiz** ve **asi.ing** adlı fonksiyonlar tanımlandı. **tm** paketi içerisinde **tm_map()** fonksiyonu temizleme işlemlerinde;
+**tolower** işlemi metindeki harfleri küçük harfe çevirmek, 
+**stripWhitespace** işlemi ekstra boşlukları kaldırmak,
+**removePunctuation** işlemi noktalama işaretlerini kaldırmak,
+**PlainTextDocument** işlemi sade metin belgesine dönüştürmek,
+**removeWords**  işlemi bağlaçları ve istemediğimiz kelimeleri çıkartmak,
+**removeNumbers** işlemi rakamları ayıklamak için kullanılır.
+(Bu işlemler **asi.tweettidy** fonksiyonu içinde yapıldı.)
+
+
+```{r message=FALSE, warning=FALSE}
+asi.urlsiz <- function(x) gsub("https://t.co/[A-Za-z\\d]+|&amp;"," ",x) 
+asi.ing <- function(x) gsub("[^[:alpha:][:space:]]*","",x) 
+
+asi.tweettidy <- function(corpus){
+  corpus <- tm_map(asi.corpus,PlainTextDocument)
+  corpus <- tm_map(corpus, content_transformer(asi.urlsiz ))
+  corpus <- tm_map(corpus, stripWhitespace)
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, content_transformer(tolower))
+  corpus <- tm_map(corpus, removeWords, stopwords::stopwords("en", source = "stopwords-iso"))
+  corpus <- tm_map(corpus, content_transformer(asi.ing))
+  return(corpus)
+}
+
+asi.tweet.tidy<-asi.tweettidy(asi.corpus)
+asi.tweet.tidy[[50]][1]    #temizlenmiş 50.tweet
+vaccination$text[50]       #temizlemeden önceki 50.tweet
+```
+
+Kelime sıklık matrisi oluşturulduktan sonra sıralı bir şekilde ilk 10 kelime data frame (veri çerçevesi) formatına getirilir.
+
+```{r message=FALSE, warning=FALSE}
+asi.tdm <- TermDocumentMatrix(asi.tweet.tidy)
+asi.m <- as.matrix(asi.tdm)
+asi.v <- sort(rowSums(asi.m),decreasing=TRUE)
+asi.df <- data.frame(word = names(asi.v),freq=asi.v)
+head(asi.df, 10)
+```
+
+Yukarıdaki fonksiyonlarının çalıştırılmasıyla elde edilen sıklık çerçeve tablosu yukarıda görüldüğü gibidir. Tabloda da görüldüğü üzere en sık kullanılan kelime aşının ismi **pfizerbiontech** tir. Daha sonra sırasıyla **vaccine** ve **covid** kelimeleri gelmektedir.
+
+Kelime Köklerinin Bulunması 
+
+```{r message=FALSE, warning=FALSE}
+text_data <- asi.tweet
+#Noktalama isaretlerini kaldirma
+rm_punc <- removePunctuation(text_data)
+#Karakter vektoru olusturma
+n_char_vec <- unlist(strsplit(rm_punc, split = ' '))
+#Kelime turetme islemi
+stem_doc <- stemDocument(n_char_vec)
+head(stem_doc,50)
+```
+
+
+Sık kullanılan kelimelerin grafikleri çizdirilirse;
+
+```{r message=FALSE, warning=FALSE}
+#Sütun grafiği
+ggplot(head(asi.df,10), aes(reorder(word,freq), freq)) +
+  geom_bar(stat = "identity",col="pink",size=2) + coord_flip() +
+  xlab("Kelimeler") + ylab("Kelime Frekansı") +
+  ggtitle("Aşı Tweet Frekansı")
+
+```
+
+```{r message=FALSE, warning=FALSE}
+asi.frekans <- subset(asi.v,asi.v >= 200)
+asi.frekans.df <- data.frame(term = names(asi.frekans), freqs = asi.frekans)
+ggplot(asi.frekans.df, aes(x=term, y=freqs)) + 
+  geom_line(aes(group=1),colour="salmon3") + geom_point(size=3, colour="pink2")+
+  xlab("Kelime")+ylab("Frekans") + coord_flip()
+  
+
+```
+
+Kelime bulutu oluşturarak süreç tamamlanır. Bu aşamada her defasında aynı sonuçların ve düzenin elde edilebilmesi için **set.seed()** ve random.order=FALSE fonksiyonları kullanılır. Kelimeleri renklerdirmek için **brewer.pal()** fonksiyonu kullanılır.
+
+```{r message=FALSE, warning=FALSE}
+set.seed(1234)
+
+wordcloud(words = asi.df$word, freq = asi.df$freq, min.freq = 2,
+          max.words=300, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Set2"))
+```
+
+Kelime bulutumuzu wordcloud2 paketini kullanarakta farklı bir bulut oluşturabiliriz.
+
+```{r message=FALSE, warning=FALSE}
+wordcloud2(asi.df, size=1.6, color='random-light', backgroundColor="black")
+```
+
+Yukarıda oluşturulan tablo grafikle de gösterilebilir.
+
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+str(asi.df)
+y<-head(asi.df, 10)
+y
+ggplot(y)+geom_point(aes(freq, word),col="red",size=4)+
+labs(subtitle=NULL, y="Kelimeler", x="Kelime Sayısı",title="En Cok Karsılasılan Ilk 10 Kelime", caption = "Source:TBulut")+
+  theme(plot.title = element_text(family = "Trebuchet MS", color="#666666", face="bold", size=18, hjust=0.5)) +
+theme(axis.title = element_text(family = "Trebuchet MS", color="#666666", face="bold", size=12))
+```
+
+## Dendogram ve Korelasyon
+
+TDM’yi kullanarak aşı tweetleri ile ilgili dendogram oluşturulur. Bunun için öncelikle TDM içinde bulunan kelimeleri sınırlandırılır.TDM üzerindeki seyrekleştirme (sparse) tm paketindeki **removeSparseTerms()** fonksiyonu ile yapılır. Fonksiyondaki **sparse()** argümanını 1 değerine yaklaştırdığımızda terim sayısı azalır, aksine 0 değerine yaklaştırdığımızda elimizdeki terim sayısı artar. Aşağıdaki kodda bu işlem yer almaktadır.
+
+```{r message=FALSE, warning=FALSE}
+#asi.tdm nin boyutları
+dim(asi.tdm)
+```
+
+```{r message=FALSE, warning=FALSE}
+#Birinci seyrekleştirme işlemi
+asi.tdm1 <- removeSparseTerms(asi.tdm, sparse = 0.95)
+
+#İkinici seyrekleştirme işlemi
+asi.tdm2 <- removeSparseTerms(asi.tdm, sparse = 0.98)
+
+#Print tdm1
+asi.tdm1
+
+#Print tdm2
+asi.tdm2
+```
+
+Dendogramı oluşturmak için kullanacağımız **dist()** fonksiyonu için ilk başta TDM’yi önce bir matris haline ve takiben bir veri tabanı haline çevrilmesi gerekir. 
+
+```{r message=FALSE, warning=FALSE}
+#matrisi oluşturma
+asi.tdm.m <- as.matrix(asi.tdm2)
+
+#veri tabanı oluşturma
+asi.tdm.vt <- as.data.frame(asi.tdm.m)
+
+#kelimeler arası mesafeler
+asi.mesafe <- dist(asi.tdm.vt)
+
+#Kümeleme işlemi
+asi.kume <- hclust(asi.mesafe)
+
+#Dendogram çizimi 
+plot(asi.kume)
+
+```
+
+Kelimeler arasındaki ilişkiyi görselleştirmek için bir diğer yol ise korelasyon grafiğidir.
+
+```{r}
+#Korelasyonları hesaplayalım
+korelasyonlar <- findAssocs(asi.tdm, "coronavirus", 0.2);korelasyonlar
+#korelasyonları veri tabanı haline çevirelim
+korelasyonlar.df <- list_vect2df(korelasyonlar)[, 2:3];korelasyonlar.df
+#grafikleyelim
+ggplot(korelasyonlar.df, aes(y = korelasyonlar.df [, 1])) + 
+  geom_point(aes(x = korelasyonlar.df [, 2]), 
+             data = korelasyonlar.df , size = 3) + 
+   theme_gdocs()
+```
+
+
+Düzenlediğimiz veri üzerinden ikili kelime grupları oluşturulur.
+
+Kelime grupları oluşturmak için RWeka paketi kullanılır.
+
+```{r message=FALSE, warning=FALSE}
+bigram.tokenizer = function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+tdm.bigram = TermDocumentMatrix(asi.tweet.tidy,control = list(tokenize = bigram.tokenizer))
+freq2 = sort(rowSums(as.matrix(tdm.bigram)),decreasing = TRUE)
+
+asi.df2 = data.frame(word=names(freq2), freq=freq2)
+head(asi.df2, 10)
+```
+
+Sık kullanılan ikili kelime gruplarının sütun grafiği çizdirilir.
+
+```{r message=FALSE, warning=FALSE}
+#Sütun grafiği
+ggplot(head(asi.df2,10), aes(reorder(word,freq), freq)) +
+  geom_bar(stat = "identity",col="pink",size=2) + coord_flip() +
+  xlab("Kelimeler") + ylab("Kelime Frekansı") +
+  ggtitle("Aşı Tweetlerinin İkili Kelime Grubu Frekansı")
+
+```
+
+Grafikte **covid vaccine** kelime grubunun daha sık kullanıldığı görülmektedir.
+
+İkili kelime gruplarının kelime bulutları oluşturulur.
+
+```{r message=FALSE, warning=FALSE}
+set.seed(1234)
+
+wordcloud(words = asi.df2$word, freq = asi.df2$freq, min.freq = 2,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Set2"))
+```
+
+Üçlü kelime grubu oluşturulur.
+
+```{r message=FALSE, warning=FALSE}
+trigram.tokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
+tdm.trigram = TermDocumentMatrix(asi.tweet.tidy,control = list(tokenize = trigram.tokenizer))
+freq3= sort(rowSums(as.matrix(tdm.trigram)),decreasing = TRUE)
+asi.df3 = data.frame(word=names(freq3), freq=freq3)
+head(asi.df3,10)
+```
+
+Üçlü kelime gruplarının sütun grafiği oluşturulur.
+
+```{r message=FALSE, warning=FALSE}
+#Sütun grafiği
+ggplot(head(asi.df3,10), aes(reorder(word,freq), freq)) +
+  geom_bar(stat = "identity",col="pink",size=2) + coord_flip() +
+  xlab("Kelimeler") + ylab("Kelime Frekansı") +
+  ggtitle("Aşı Tweetlerinin Üçlü Kelime Grubu Frekansı")
+```
+
+Grafikte **pfizerbiontech covid vaccine**  kelime grubunun daha sık kullanıldığı görülmektedir.
+
+Üçlü kelime grubunun kelime bulutu oluşturulur.
+
+```{r message=FALSE, warning=FALSE}
+set.seed(1234)
+
+wordcloud(words = asi.df3$word, freq = asi.df3$freq, min.freq = 2,
+          max.words=50, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Set2"))
+```
+
+## Duygu Analizi
+
+```{r message=FALSE, warning=FALSE}
+asi.da <- iconv(vaccination)
+da <- get_nrc_sentiment(asi.da)
+head(da)
+
+get_nrc_sentiment('delay')
+
+barplot(colSums(da),
+        las = 2,
+        col = rainbow(12),
+        ylab = 'Frekans',
+        main = 'Aşı Tweetlerinde Genel Duygu Analizi')
+```
+
+Aşı hakkında atılan genel tweetlere baktığımızda sıklıkla **pozitif** düşünceleri gördüğümüz gibi, **negatif** düsünceleri de görmekteyiz.
+
+## Belirli Ülkeler Arası Aşı Tweetleri Duygu Analizi
+
+
+```{r}
+
+removeNA.data=na.omit(vaccination)
+USA=removeNA.data[str_detect(removeNA.data$user_location, "USA"), ]
+TURKEY=removeNA.data[str_detect(removeNA.data$user_location, "Türkiye"), ]
+GERMANY=removeNA.data[str_detect(removeNA.data$user_location, "Germany"), ]
+ITALY=removeNA.data[str_detect(removeNA.data$user_location, "Italy"), ]
+
+par(mfrow=c(2,2))
+
+USA.D <- iconv(USA)
+USA.DA <- get_nrc_sentiment(USA.D)
+head(USA.DA)
+
+get_nrc_sentiment('delay')
+
+barplot(colSums(USA.DA),
+        las = 2,
+        col = rainbow(12),
+        ylab = 'Frekans',
+        main = 'Aşı Tweetleri Amerika Duygu Analizi')
+
+TURKEY.D <- iconv(TURKEY)
+TURKEY.DA <- get_nrc_sentiment(TURKEY.D)
+head(TURKEY.DA)
+
+get_nrc_sentiment('delay')
+
+barplot(colSums(TURKEY.DA),
+        las = 2,
+        col = rainbow(12),
+        ylab = 'Frekans',
+        main = 'Aşı Tweetleri Türkiye Duygu Analizi')
+
+GERMANY.D <- iconv(GERMANY)
+GERMANY.DA <- get_nrc_sentiment(GERMANY.D)
+head(GERMANY.DA)
+
+get_nrc_sentiment('delay')
+
+barplot(colSums(GERMANY.DA),
+        las = 2,
+        col = rainbow(12),
+        ylab = 'Frekans',
+        main = 'Aşı Tweetleri Almanya Duygu Analizi')
+
+ITALY.D<- iconv(ITALY)
+ITALY.DA <- get_nrc_sentiment(ITALY.D)
+head(ITALY.DA)
+
+get_nrc_sentiment('delay')
+barplot(colSums(ITALY.DA),
+        las = 2,
+        col = rainbow(12),
+        ylab = 'Frekans',
+        main = 'Aşı Tweetleri İtalya Duygu Analizi')
+
+#par(mfrow=c(2,2)) bir sonraki işlemde karşılaştırma grafiğinin üstüne grafik çizdirilmemesi için baştaki karşılaştırma kodunun tekrar çalıştırılması gerekir.
+```
+
+Aşı hakkında atılan tweetleri belirli ülkeler arasında incelediğimizde;
+Aşı tweetlerinin Amerika,Almanya ve İtalya'daki kullanıcılar üzerinde sıklıkla **pozitif** düşünceleri gördüğümüz gibi, aşının **güven** verdiğini de görmekteyiz.
+Türkiyede ise aşı tweetlerine baktığımızda aşının sıklıkla kullanıcılara güven verdiği gibi,bu kullanıcıların **beklenti** içerisinde olduğunu da göstermektedir.
+
+
+
+## Kaynaklar
+
+https://bookdown.org/content/2096/twitter-ile-metin-madenciligi.html#metin-temizligi
+
+https://www.newslabturkey.org/r-ekosisteminde-metin-madenciligi-nasil-yapilir/
+
+https://tevfikbulut.com/2018/08/02/kelime-bulutu-word-cloud/
+
+https://www.dropbox.com/sh/9uwf4ygv0kwhh0l/AAClYX8WCEPxtQOGP4a3z0e-a/Ders_notlari?dl=0&preview=metinmadenciligi_giris1.Rmd&subfolder_nav_tracking=1
+
+https://rstudio-pubs-static.s3.amazonaws.com/118348_a00ba585d2314b3c937d6acd4f4698b0.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
