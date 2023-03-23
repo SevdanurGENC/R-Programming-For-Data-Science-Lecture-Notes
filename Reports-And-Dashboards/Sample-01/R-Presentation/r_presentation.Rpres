@@ -1,0 +1,28 @@
+R ile Sunum Dosyası Hazırlama
+========================================================
+author: İbrahim Kocabas
+date: 
+autosize: true
+
+Giris
+========================================================
+
+- R ile Programlama
+- Kesifci Veri Analizi ve Veri Gorsellestirme
+- Uygulamali Istatistik
+
+R ile Programlama Bolumu
+========================================================
+
+Bu bolumde R ile programlama hakkında bilgiler verilecektir.
+
+```{r}
+summary(cars)
+```
+
+Uygulamali Istatistik
+========================================================
+
+```{r, echo=FALSE}
+plot(cars)
+```

@@ -1,0 +1,568 @@
+---
+title: "R ile Programlamaya Giris"
+output:
+  html_notebook: default
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+# 1.Temel İslemler
+
+## Operatorler
+
+### Atama Operatorleri
+
+```{r}
+### Atama Operatorleri
+
+#<-
+#=
+#<<-
+
+a <-10
+b <-20
+c =19
+```
+
+### Aritmatik Operatorler
+
+```{r}
+# + - * / ^
+
+10 + 10 + 20
+89 / 4
+a <- 90 * 2
+a * b
+a / b
+b^2
+
+```
+
+### Mantiksal Operatorler
+
+```{r}
+
+# >, <, >=, <=, !=, &, ==
+
+40 > 10
+40 < 10
+
+
+veri <- 1:10   # 1'den 10 kadar degerleri verir ve adi veri olsun.
+
+veri[veri > 5]
+veri[veri <= 5]
+veri[veri == 3]
+veri[veri != 4]
+veri[veri > 1 & veri <3]
+```
+
+## Matematiksel Islemler
+
+```{r}
+#sqrt
+#abs
+#log, log10, log2
+#exp(3)
+
+sqrt(25)
+abs(-19)
+log(9)
+
+```
+
+## Temel Fonksiyonlar
+
+```{r}
+sessionInfo()  # bilgisayardan bir takim bilgiler verir.
+getwd()        # hangi dizinde islem yaptigimizi gostermektedir.
+dir()          # Calisma dizini altindaki dosyalari gosterir.
+list.files()   # Calisma dizini altindaki dosyalari gosterir.
+dir.create()   # bir dizin altinda her hangi bir dosya olusturma icin kullanilir.
+ls()           # Environment icerisinde olusturulmus degiskenlerin isimleri
+rm()           # degiskenleri silmek icin kullanilir.
+available.packages()   # kullanilabilecek olan bire takim kutuphaneler
+install.packages()     # yüklü olna bir takim kutuphaneler
+data()                 # R'daki veri setleri
+object.size()          # dosyanin boyutuna bakma
+head()                 # veri seti icerisindeki ilk 6 gozlem
+
+
+```
+
+## Veri Tipleri
+
+```{r}
+# Vektör
+# Liste
+# Matris
+# DataFrame
+
+
+# Ayni turdeki birimlerden olusan vektorlere atomik vektorler denmektedir.
+# character, numeric(real or decimal), integer, logical, complex
+
+# Farkli turlerdeki degerlerden olusan vektorlere liste denir.
+
+
+
+## Atomic Vektorler 
+
+# numeric
+a <- 1
+typeof(a) #tip sorgulamasi
+is.vector(a) #vektor sorgulamasi
+
+
+# integer
+b <- 1L
+typeof(b)
+is.vector(b)
+
+
+# character
+c <- "bu bir karakterdir"
+typeof(c)
+is.vector(c)
+
+
+# logical
+e <- 5
+f <- 1
+log <- e < f
+typeof(log)
+is.vector(log)
+
+# complex
+z <- 1 + 2i
+typeof(z)
+
+
+# Vektör
+a <- 1:10
+a <- 19:45
+is.vector(a)
+a <- c("a","b","c","d")
+b <- c(1,2,3,4,5,6)
+is.vector(b)
+
+
+# Liste
+list(111, "merhaba" , 1 + 2i)
+
+
+# Matris
+m  <- matrix(1:9, nrow = 3 ,  ncol = 3)
+m
+
+
+# Data Frame
+data.frame(
+  
+  isim = c("ibrahim","resul","hanife","birsen"),
+  yas = c(29,64,65,46)
+  
+)
+
+```
+
+# 2.Fonksiyonlar
+
+```{r}
+# R'da nasil fonksiyon yazilir?
+kare_fonksiyonu <- function(x, y) {
+  
+  a <- x^2
+  y*a
+  
+}
+
+# fonksiyonu calistirmak icin
+kare_fonksiyonu(4, 3)
+
+
+
+# Ne Zaman Fonksyion Yazılmalıdır ?
+
+df <- data.frame(
+  a = c(1:10), 
+  b = c(2:11),
+  c = c(4:13),
+  d = c(9:18)
+)
+
+# her bir değeri standartlastirmak istiyoruz.
+# Standartlaştırma, (X - M) / SIGMA/KOK N
+# Her bir değişkeni kendi ortalamasindan cikartiyoruz daha sonra bu cikan ifadeyi sigma ve kok N ifadesine boluyoruz.
+# Sigma, degiskenin kendi standart sapmasini ifade etmektedir.
+
+(df$a - mean(df$a)) / sd(df$a) / sqrt(length(df$a))
+(df$b - mean(df$b)) / sd(df$b) / sqrt(length(df$b))
+(df$c - mean(df$c)) / sd(df$c) / sqrt(length(df$c))
+(df$d - mean(df$d)) / sd(df$d) / sqrt(length(df$d))
+
+
+# Olceklendirme yapmak icin bir fonksiyon ihiyaci gerekmistir. Onlarca ve yuzlerce
+# ve daha fazla degisken icin bu islemleri tek tek elle yazmak vakit alacaktir.
+
+olcek <- function(x) {
+  
+  (x- mean(x)) / sd(x) / sqrt(length(x))
+}
+
+olcek(df$a)
+
+```
+
+# 3.Kontrol ve Dongu Ifadeleri
+
+## If-Else
+
+```{r}
+# IF - ELSE
+
+sayi <- 6
+
+if(sayi > 7) {
+  
+  print("Sayi 7'dan buyuktur.")
+  
+} else {
+  
+  sayi * 5
+}
+
+# Fonksiyonlar ve Kontrol Ifadelerin Bir Arada Kullanilmasi?
+
+df <- data.frame (
+  
+  a = c(1:10),
+  b = c(2:11),
+  c = c(4:13),
+  d = c(9:18),
+  f = c("a","b","c","d","c","d","d","a","a","l")
+)
+
+olcek <- function(x) {
+  
+  if(is.numeric(x) == FALSE){
+    
+    message("LÜTFEN NÜMERİK OLAN BİR DEĞİŞKEN GİRİNİZ..!")
+  }
+  
+  (x- mean(x)) / sd(x) / sqrt(length(x))
+}
+
+olcek(df$f)
+
+###################################################################
+
+# On Tanimli Arguman Degeri
+
+olcek <- function(x,n=10) {
+  
+  if(is.numeric(x) == FALSE){
+    
+    message("LUTFEN NUMERIK OLAN BIR DEGISKEN GIRINIZ..!")
+  }
+  
+  (x- mean(x)) / sd(x) / sqrt(n)
+}
+
+olcek(df$a)
+
+# Yukaridaki islemde eger on tanimli deger vermemis olsaydik ve kullanici da
+# degisken secimi sonras, bir deger girmeyi unutmus olsaydi hata alacakti.
+# Bu yUzden dolayi hata ongorusunden on tanimli deger atamis olduk.
+
+#######################################################################
+
+# IC ICE IF KULLANIMI
+
+a <- 100
+
+if (is.character(a) == TRUE) {
+  
+  paste(a, "OK karakter")
+  
+} else if (is.Date(a) == TRUE) {
+  
+  paste(a, "tarih bu")
+  
+} else if (is.numeric(a) == TRUE)  {
+  
+  print("bu sayi numeric")
+  
+  
+}
+
+a <- as.Date("1992-02-26")
+
+```
+
+## For
+
+```{r}
+# FOR DONGUSU
+
+for (i in 1:5) print(1:i)
+
+# Vektor Icerisinde Dondurme
+
+a <- c(1,3,5,7,9)
+
+for (i in a) {
+  
+  print(i)
+}
+
+########################################################
+
+# Elimdeki sayilara karsilik gelen alfabedeki harfler nelerdir ?
+
+sayilar <- c(14,11,10,16,25,26)
+
+
+for (i in sayilar) {
+  
+  sayiharf <- paste(i, letters[i])
+  print(sayiharf)
+}
+
+```
+
+## While-Break-Next
+
+```{r}
+# WHILE,BREAK,NEXT
+
+# While -- e kadar / surece
+
+i <-1
+while (i < 6) {
+  
+  print(i)
+  
+  i  = i + 1
+  
+}
+
+
+# break --- -e gelince kes / esit olunca durdur.
+
+x <- 1:10
+
+for (i in x) {
+  
+  if(i == 7) {
+    
+    break
+  }
+  
+  print(i)
+}
+
+
+
+# next  --- -e gelince atla siradaki degerden devam et
+
+x <- 1:10
+
+for (i in x) {
+  
+  if (i == 7) {
+    
+    next
+  }
+  
+  print(i)
+}
+```
+
+# 4.Veri Okuma
+
+```{r}
+# R İçerisindeki Veri Setleri 
+
+data()
+
+a <- AirPassengers
+
+e <- euro
+
+
+# Aktif olmayanlarda dahil tüm veri setlerine erişim
+
+data(package = .packages(all.available = TRUE))
+
+######################################################
+
+# Dış Kaynaklı Veri Okuma
+
+# 1.Environment --> Import Datasets
+
+# --> From Text(base) -- txt
+# --> From Text(readr) -- csv
+# --> From Excel
+
+duz_metin
+ornekcsv
+ornekx
+
+#####################################################
+
+ # 2.El ile Kod Yazarak Okuma
+
+read.table("C:/Users/lenovo/Desktop/R Programlama/programlamaya_giris/veri_okuma/duz_metin.txt")
+
+read.csv("C:/Users/lenovo/Desktop/R Programlama/programlamaya_giris/veri_okuma/ornekcsv.csv",sep = ";")
+read_delim("C:/Users/lenovo/Desktop/R Programlama/programlamaya_giris/veri_okuma/ornekcsv.csv",delim = ";")
+
+read_excel("C:/Users/lenovo/Desktop/R Programlama/programlamaya_giris/veri_okuma/ornekx.xlsx")
+
+read_dta("C:/Users/lenovo/Desktop/R Programlama/programlamaya_giris/veri_okuma/oil.dta")
+
+#######################################################
+
+# 3. Kullanıcı Girişi ile Veri Okuma
+
+a <- scan()  # değerler girilip veri kaydeder ve bitirmek için enter
+
+b <- readline() # karakter/string ifade dönen bir fonksiyon
+
+
+```
+
+# 5.Kod Yazim Stili
+
+> GENEL NOTLAR
+
+.Isimlendirmeler mumkun oldugu kadar kisa ve anlasilir olmalidir.
+
+.Isimlendirmeler yapilirken varolan isimlendirmelerden farkli isimler kullanilmali.
+
+.Isimlendirmeler kucuk harfler tercih edilmelidir.
+
+.Operatorlerin etrafinda bosluklar olmalidir.
+
+.Suslu parantez kullanimi tercih edilmeli ve kod yazimina alt satirdan baslanmalidir.
+
+.Satir uzunlugu kod okunabilirligi acisindan 80 karakteri gecmemelidir.
+
+.Girinti icin iki bosluk kullanilmalidir.
+
+```{r}
+
+                          ## ATAMA OPERATORU KULLANIMI ##
+
+
+# fonksiyon iclerinde = diger tum <- durumlarda atama operatoru
+
+a <- 1
+a = 1
+
+                         ## DEGISKEN VE FONKSIYON ISIMLENDIRME ###
+
+# Good
+day_one
+day_1
+
+# Bad
+first_day_of_the_month
+DayOne
+dayone
+djm1
+
+
+                         ##  DOSYA ISIMLENDIRME ## 
+
+
+# Good
+fit-models.R
+utility-functions.R
+
+# Bad
+foo.r
+stuff.r
+
+
+                        ## BOSLUK KULLANIMI ##
+
+# Good
+average <- mean(feet / 12 + inches, na.rm = TRUE)
+
+# Bad
+average<-mean(feet/12+inches,na.rm=TRUE)
+
+
+
+## Operatorlerin etrafinda her zaman bosluk olmayabilir.
+
+# Good
+x <- 1:10
+base::get
+
+# Bad
+x <- 1 : 10
+base :: get
+
+
+
+                       ## FONKSIYONLARDA BOSLUK KULLANIMI ##
+
+# Good
+if (debug) {
+  
+  do(x) 
+  
+}
+
+
+plot(x, y)
+
+# Bad
+if(debug)do(x)
+plot (x, y)
+
+
+
+# Good
+if (debug) do(x)
+diamonds[5, ]
+
+# Bad
+if ( debug ) do(x)  # No spaces around debug
+
+x[1, ]   # Needs a space after the comma
+x[1 ,]  # Space goes after comma not before
+
+
+
+
+                          ## SUSLU PARANTEZ ##
+
+# Good
+
+if (y < 0 && debug) {
+  
+  message("Y is negative")
+  
+}
+
+
+
+if (y == 0) {
+  log(x)
+} else {
+  y ^ x
+}
+
+
+# Bad
+
+if (y < 0 && debug)
+  message("Y is negative")
+
+```

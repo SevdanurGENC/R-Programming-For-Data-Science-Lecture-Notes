@@ -1,0 +1,85 @@
+---
+title: "R Markdown Bicimlendirme"
+author: "Sevdanur GENC"
+date: "23 03 2023"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Numaralandırma
+
+-   Numaralandirma icin diyez(\#) isareti kullanilir.Bu isarette \# en buyuk baslık budur.
+
+-   Ornegin iki tane diyez(\#) isareti kullanıldıginda ana basligin alt basligi olarak algilanir.
+
+## Bu numaralandirmanin alt basligidir.
+
+................................................................................
+
+# Italik Yazma
+
+-   İki sekilde Markdown içerisinde italik sekilde yazilir..
+
+1.Ifadelerin etrafına \*\* koyularak *Bu bir italik yazidir.*
+
+2.Ifadelerin etrafına alt cizgi(\_) koyarak *diger bir italik yazma sekli budur*
+
+................................................................................
+
+# Kalin Yazma(Bold)
+
+-   Kalin yazilmak istenelen kelimenin basina ve sonuna olmak uzere iki tane yildiz(\*\*) yada alt cizgi(\_\_) koyularak gerceklestirilir.
+
+**Bu cümle kalin olarak yazilmistir.**
+
+**Bu cümle kalin olarak yazilmistir.**
+
+................................................................................
+
+# Ustunu Cizme
+
+-   Istenilen bir kısmın ustunu cizmek icin iki tilda isareti(\~\~) kullanilir.
+
+~~Bu yazinin ustu cizildi~~
+
+................................................................................
+
+# Link Verme
+
+-   Link verme islemi basina https ifadesi eklenilerek yapilir.
+
+[Bu bir linktir ve R Studio web sayfasına yönlendirir.](https://www.rstudio.com)
+
+................................................................................
+
+# Menuleme
+
+-   menu 1
+-   menu 2
+
+1.  menu_1
+2.  menu_2
+
+................................................................................
+
+# Denklem Ekleme
+
+-   Bir denklem ifadesi eklenilmek istenildiginde bunu iki dolar isareti(\$) arasinda gerceklestiriyoruz.
+
+$A=\pi*r^2$
+
+................................................................................
+
+# Resim Ekleme
+
+-   Calisma sayfamiz icerisine resim de eklemek istersek;
+
+Logo: ![](academypeak.jpg)
+
+................................................................................
